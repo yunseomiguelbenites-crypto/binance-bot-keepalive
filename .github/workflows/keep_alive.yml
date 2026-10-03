@@ -1,0 +1,40 @@
+name: Render 24/7 Keep-Alive Sentinel
+
+on:
+  schedule:
+    # Se ejecuta cada 5 minutos de forma continua
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Ping Render Trading Bot 24/7
+        run: |
+          echo "🚀 [SENTINEL 24/7] Iniciando ciclo de estimulación para Render Frankfurt..."
+          TARGET_URL="https://binance-bot-frankfurt.onrender.com"
+          
+          # Realiza 5 pings espaciados por 60 segundos para garantizar actividad constante
+          for i in {1..5}; do
+            echo "[$(date -u +'%Y-%m-%d %H:%M:%S UTC')] Pulso #$i/5 hacia $TARGET_URL"
+            
+            STATUS_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$TARGET_URL/health" || echo "TIMEOUT")
+            echo "  • Endpoint /health -> Código HTTP: $STATUS_HEALTH"
+            
+            STATUS_PING=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$TARGET_URL/ping" || echo "TIMEOUT")
+            echo "  • Endpoint /ping   -> Código HTTP: $STATUS_PING"
+            
+            if [ "$STATUS_HEALTH" == "200" ]; then
+              echo "  ✅ Bot activo, saludable y respondiendo en Render Frankfurt."
+            else
+              echo "  ⚠️ Aviso: Código recibido $STATUS_HEALTH. Reintentando..."
+            fi
+            
+            if [ $i -lt 5 ]; then
+              sleep 60
+            fi
+          done
+          
+          echo "🏁 Ciclo de 5 minutos completado. El bot se mantiene 100% despierto sin entrar en modo reposo."
