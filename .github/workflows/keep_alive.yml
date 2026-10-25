@@ -11,25 +11,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Ping Render Trading Bot 24/7
+      - name: Ping Render Trading Bots 24/7
         run: |
           echo "🚀 [SENTINEL 24/7] Iniciando ciclo de estimulación para Render Frankfurt..."
-          TARGET_URL="https://binance-bot-frankfurt.onrender.com"
+          TARGET_BINANCE="https://binance-bot-frankfurt.onrender.com"
+          TARGET_FOMO="https://fomo-solana-bot.onrender.com"
           
-          # Realiza 5 pings espaciados por 60 segundos para garantizar actividad constante
+          # Realiza 5 pings espaciados por 60 segundos para garantizar actividad constante en ambos bots
           for i in {1..5}; do
-            echo "[$(date -u +'%Y-%m-%d %H:%M:%S UTC')] Pulso #$i/5 hacia $TARGET_URL"
+            echo "[$(date -u +'%Y-%m-%d %H:%M:%S UTC')] Pulso #$i/5 hacia los bots en Render"
             
-            STATUS_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$TARGET_URL/health" || echo "TIMEOUT")
-            echo "  • Endpoint /health -> Código HTTP: $STATUS_HEALTH"
+            # Ping Binance Bot
+            STATUS_B_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$TARGET_BINANCE/health" || echo "TIMEOUT")
+            STATUS_B_PING=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$TARGET_BINANCE/ping" || echo "TIMEOUT")
+            echo "  • [Binance Bot] /health: $STATUS_B_HEALTH | /ping: $STATUS_B_PING"
             
-            STATUS_PING=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$TARGET_URL/ping" || echo "TIMEOUT")
-            echo "  • Endpoint /ping   -> Código HTTP: $STATUS_PING"
+            # Ping FOMO Solana Bot
+            STATUS_F_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$TARGET_FOMO/health" || echo "TIMEOUT")
+            STATUS_F_PING=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$TARGET_FOMO/ping" || echo "TIMEOUT")
+            echo "  • [FOMO Solana Bot] /health: $STATUS_F_HEALTH | /ping: $STATUS_F_PING"
             
-            if [ "$STATUS_HEALTH" == "200" ]; then
-              echo "  ✅ Bot activo, saludable y respondiendo en Render Frankfurt."
+            if [ "$STATUS_F_HEALTH" == "200" ]; then
+              echo "  ✅ FOMO Solana Bot activo y saludable en Render Frankfurt."
             else
-              echo "  ⚠️ Aviso: Código recibido $STATUS_HEALTH. Reintentando..."
+              echo "  ℹ️ FOMO Solana Bot respondiendo ($STATUS_F_HEALTH). Manteniendo activo..."
             fi
             
             if [ $i -lt 5 ]; then
@@ -37,4 +42,4 @@ jobs:
             fi
           done
           
-          echo "🏁 Ciclo de 5 minutos completado. El bot se mantiene 100% despierto sin entrar en modo reposo."
+          echo "🏁 Ciclo de 5 minutos completado. Ambos bots se mantienen 100% despiertos sin entrar en reposo."
